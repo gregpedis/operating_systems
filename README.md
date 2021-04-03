@@ -5,7 +5,7 @@ A repository containing all the solutions of the Operating Systems ECE NTUA Cour
 
 ## Useful System Calls
 
-#### open
+### open
 
 Opens a specified file.
 
@@ -16,7 +16,7 @@ Opens a specified file.
 > - *mode*: optional, specifies the user permissions on the file if created by open. 
 > - **returns**: int file descriptor, reference to the file.
 
-#### close 
+### close 
 
 Closes a specified file.
 
@@ -25,9 +25,9 @@ Closes a specified file.
 > - *fd*: the file descriptor, reference to the file.
 > - **returns**: int, 0 on success, -1 on failure.
 
-#### read 
+### read 
 
-Read from a file.
+Reads from a file.
 
 > `ssize_t read(int fd, void *buf, size_t count)`
 
@@ -36,7 +36,7 @@ Read from a file.
 > - *count*: the maximum amount of bytes to write to buf.
 > - **returns**: ssize_t, on success the amount of bytes read as well as the file position is advanced by this amount, on failure -1.
 
-#### write 
+### write 
 
 Writes to a file.
 
