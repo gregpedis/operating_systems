@@ -47,6 +47,54 @@ Writes to a file.
 > - *count*: the maximum amount of bytes to write into fd.
 > - **returns**: ssize_t, on success the amount of bytes written, on failure -1.
 
+### perror
+
+Prints a message to stderr.
+
+> `void perror(const char *str)`
+
+### exit
+
+Terminates the calling process immediatebly.
+
+> `void exit(int status)`
+
+### fork
+
+Create a child process and returns the child PID to the parent and 0 to the child.
+
+> `pid_t fork()`
+
+### getpid
+
+Returns the PID of the calling process.
+
+> `pid_t getpid()`
+
+### getppid
+
+Returns the PID of the parent of the calling process.
+
+> `pid_t getppid()`
+
+### wait
+
+Wait for any child process to change state.
+
+> `pid_t wait(int *wstatus)`
+
+### waitpid
+
+Wait for a specific child process to change state.
+
+> `pid_t waitpid(pid_t pid, int *wstatus, int options)`
+
+### execv
+
+Replaces the current process image with a new one.
+
+> `int execv(const char *path, char * const argv[])`
+
 ## Common File Descriptors
 
 - stdin :   0
