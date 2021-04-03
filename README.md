@@ -49,6 +49,6 @@ Writes to a file.
 
 ## Common File Descriptors
 
-- 0: stdin
-- 1: stdout
-- 2: stderr
+- stdin :   0
+- stdout :  1
+- stderr :  2
