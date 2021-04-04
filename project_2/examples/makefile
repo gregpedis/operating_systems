@@ -18,6 +18,13 @@ parent: parent.o
 parent.o: parent.c
 	gcc parent.c -c -o parent.o
 
+# Targets to build in one-step
+child-onestep: child.c
+	gcc child.c -o child
+parent-onestep: parent.c
+	gcc parent.c -o parent 
+
 # Run `make clean` to delete binaries and object files.
 clean:
 	rm -rf $(TARGETS) *.o
+

@@ -1,20 +1,30 @@
-# the compiler to be used
-CC = gcc
+TARGETS = child parent
 
-# compiler flags
-CFLAGS = -Wall 
+# Targets to build when running `make`
+all: $(TARGETS)
 
-# the build target executable
-TARGET = project2
+# Phony targets. Executed always.
+.PHONY: all clean
 
-all: $(TARGET)
-	
-$(TARGET): $(TARGET).c
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c
+# Targets to build `child` binary
+child: child.o
+	gcc child.o -o child
+child.o: child.c
+	gcc child.c -c -o child.o
 
+# Targets to build `parent` binary
+parent: parent.o
+	gcc parent.o -o parent
+parent.o: parent.c
+	gcc parent.c -c -o parent.o
+
+# Targets to build in one-step
+child-onestep: child.c
+	gcc child.c -o child
+parent-onestep: parent.c
+	gcc parent.c -o parent 
+
+# Run `make clean` to delete binaries and object files.
 clean:
-	$(RM) $(TARGET)
-
-run:
-	./$(TARGET) 15 
+	rm -rf $(TARGETS) *.o
 

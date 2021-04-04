@@ -4,6 +4,10 @@
 #include <unistd.h>
 
 #define WAIT_TIME 1
+
+#define GT_STATE_CLOSED "f" 
+#define GT_STATE_OPEN "t"
+
 #define DEFAULT "\033[30;1m"
 #define RED "\033[31;1m"
 #define GREEN "\033[32m"
@@ -21,20 +25,10 @@ void check_neg(int ret, const char *msg)
     perror(msg);
     exit(EXIT_FAILURE);
   }
+}
 
-  void create_childs(char *gates)
+pid_t create_child(char gate)
   {
-    size_t length = strlen(gates);
-
-    for (size_t i = 0; i < length; i++)
-    {
-      create_child(gates[i]);
-    }
-  }
-
-  pid_t create_child(char gate)
-  {
-
     pid_t p = fork();
     check_neg(p, "Failed to fork");
 
@@ -52,6 +46,19 @@ void check_neg(int ret, const char *msg)
     printf(BLUE "Created child with pid %d.\n" WHITE, p);
 
     return p;
+  }
+
+  void create_childs(char *gates)
+  {
+    size_t length = strlen(gates);
+
+    for (size_t i = 0; i < length; i++)
+    {
+      pid_t p = create_child(gates[i]);
+
+      printf(MAGENTA "[PAREN/PID=%d] Created child %d (PID=%d) and initial state %s", 
+          getpid(), i, p, gates[i]);
+    }
   }
 
   int main(int argc, char **argv)
