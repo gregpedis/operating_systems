@@ -1,46 +1,46 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/wait.h>
-#include <unistd.h>
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <sys/wait.h>
+// #include <unistd.h>
 
-#define WAIT_TIME 1
+#include "gatesapi.h"
 
-#define GT_MESSAGE_OPEN "The gates are open!"
-#define GT_MESSAGE_CLOSED "The gates are closed!"
+struct gate_context *g_context;
 
-#define DEFAULT "\033[30;1m"
-#define RED "\033[31;1m"
-#define GREEN "\033[32m"
-#define YELLOW "\033[33m"
-#define BLUE "\033[34m"
-#define MAGENTA "\033[35m"
-#define CYAN "\033[36m"
-#define WHITE "\033[37m"
-#define GRAY "\033[38;1m"
-
-
-void print_initial_message(char state)
+void print_identity_message(*g_context)
 {
-  if (state =='f')
+  if (g_context->state == GT_STATE_CLOSED)
   {
-    printf(RED "ID=" GT_MESSAGE_CLOSED WHITE, getpid());
+    printf(RED GT_MESSAGE_CLOSED WHITE "\n", g_context->i, getpid());
   }
-  else if (state=='t')
+  else if (g_context->state == GT_STATE_OPEN)
   {
-    printf(GREEN GT_MESSAGE_OPEN WHITE, getpid());
+    printf(GREEN GT_MESSAGE_OPEN WHITE "\n", g_context->I, getpid());
   }
   else
   {
     perror("This is not a valid state");
-    exit(-1);
+    exit(EXIT_FAILURE);
   }
 }
 
- int main(int argc, char **argv)
+int main(int argc, char **argv)
+{
+  if (argc < 3)
   {
-    char v = argv[1];
-
-    printf(YELLOW "Child process, i got created with value: %s\n" WHITE, argv[1]);
-
-    return 0;
+    perror("Not enough arguments for child process.");
+    exit(EXIT_FAILURE)
   }
+
+  char s = argv[2][0];
+  int i;
+  sscanf(argv[1], "%d", &i);
+
+  g_context = gc_alloc();
+  gc_init_context(g_context);
+  gc_parse_gate_from_args(g_context, i, s);
+
+  print_identity_message(*g_context);
+
+  return 0;
+}
