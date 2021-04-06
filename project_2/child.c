@@ -62,8 +62,7 @@ void on_sigalrm()
 
 void handle_signal(int signal)
 {
-
-  printf(YELLOW "[CHILD ID=%d/PID=%d/TIME=%lds] Got Signal: %d" WHITE "\n", g_context->i, getpid(), get_time_elapsed(g_context->timestamp), signal);
+  //printf(YELLOW "[CHILD ID=%d/PID=%d/TIME=%lds] Got Signal: %d" WHITE "\n", g_context->i, getpid(), get_time_elapsed(g_context->timestamp), signal);
 
   switch (signal)
   {

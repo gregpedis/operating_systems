@@ -78,27 +78,25 @@ void on_sigterm()
 
 void on_sigchld()
 {
-  if (is_closing)
-    return;
+  if (is_closing) { return; }
 
-  int status;
-  pid_t pid = wait(&status);
-
-  if (pid == -1)
-  {
-    perror("wait for child");
-    exit(EXIT_FAILURE);
-  }
-  else
-  {
     for (size_t i = 0; i < g_manager->gates_count; i++)
     {
-      if (g_manager->gates[i]->p_id == pid)
+      int status;
+      pid_t pid = waitpid(g_manager->gates[i]->p_id, &status, WNOHANG | WUNTRACED);
+
+      if (pid == -1) 
       {
+        perror("wait for child");
+        exit(EXIT_FAILURE);
+      }
+      else if (pid!=0) {
+
         if (WIFSTOPPED(status))
         {
           printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d stopped. Continuing it." WHITE "\n",
                  getpid(), g_manager->gates[i]->i, pid);
+
           kill(pid, SIGCONT);
         }
         else if (WIFEXITED(status))
@@ -115,20 +113,13 @@ void on_sigchld()
 
           create_child(g_manager->gates[i]);
         }
-
-        return;
       }
-    }
-
-    perror("uknown pid");
-    exit(EXIT_FAILURE);
-  }
+      }
 }
 
 void dispatch_signal(int signal)
 {
-
-  printf(YELLOW "[PARENT] Got signal %d" WHITE "\n", signal);
+  //printf(YELLOW "[PARENT] Got signal %d" WHITE "\n", signal);
 
   switch (signal)
   {

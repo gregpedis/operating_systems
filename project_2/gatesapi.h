@@ -29,7 +29,7 @@
 #define GT_MESSAGE_TERMINATED_PARENT "[PARENT/PID=%d] All children exited, terminating as well"
 
 #define WAIT_TIME 2
-#define ALARM_TIME 500
+#define ALARM_TIME 15
 
 struct gate_process
 {
