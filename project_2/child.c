@@ -9,8 +9,6 @@ struct gate_context *g_context;
 
 void print_identity_message()
 {
-    printf("[CHILD] CONTEXT: I-> %d State-> %c \n", g_context->i, g_context->state);
-
   if (g_context->state == GT_STATE_CLOSED)
   {
     printf(RED GT_MESSAGE_CLOSED WHITE "\n", g_context->i, getpid(), get_time_elapsed(g_context->timestamp));
@@ -62,6 +60,8 @@ void on_sigalrm()
 
 void handle_signal(int signal) {
 
+  printf(YELLOW "[CHILD ID=%d/PID=%d/TIME=%lds] Got Signal: %d" WHITE "\n", g_context->i, getpid(), get_time_elapsed(g_context->timestamp), signal);
+
   switch (signal) {
     case SIGUSR1:
       on_sigusr1();
@@ -88,7 +88,6 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
-  printf("[CHILD] ARGUMENTS: Arg0-> %s  Arg1-> %s Arg2-> %s \n", argv[0], argv[1], argv[2]);
   char s = argv[2][0];
   int i;
   sscanf(argv[1], "%d", &i);
@@ -105,6 +104,7 @@ int main(int argc, char **argv)
   sigaction(SIGALRM, &action, NULL);
 
   on_sigalrm();
+  while (1);
 
   return 0;
 }

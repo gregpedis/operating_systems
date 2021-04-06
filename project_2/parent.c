@@ -6,47 +6,126 @@
 #include "gatesapi.h"
 
 struct gate_manager *g_manager;
+int is_closing = 0;
+
+void create_child(struct gate_process *gate)
+{
+  pid_t p = fork();
+  check_neg(p, "Failed to fork");
+
+  if (p == 0)
+  {
+    int i_len = snprintf(NULL, 0, "%d", gate->i);
+
+    char *i_str = malloc(i_len + 1);
+    snprintf(i_str, i_len + 1, "%d", gate->i);
+
+    char executable[8] = "./child";
+    char gate_value[2] = { gate->initial_state, '\0'};
+
+    char *const argv[] = {executable, i_str, gate_value, NULL};
+    int status = execv(executable, argv);
+
+    /* on success, execution will never reach this line */
+    check_neg(status, "Failed to create child");
+  }
+
+  printf(MAGENTA "[PARENT/PID=%d] Created child %d (PID=%d) and initial state '%c'" WHITE "\n",
+         getpid(), gate->i, p, gate->initial_state);
+
+  gate->p_id = p;
+}
 
 void on_sigusr1()
 {
-  for (size_t i; i < g_manager->gates_count; i++)
+  for (size_t i = 0; i < g_manager->gates_count; i++)
   {
-    kill(SIGUSR1, g_manager->gates[i]->p_id);
+    kill(g_manager->gates[i]->p_id, SIGUSR1);
   }
 }
 
 void on_sigterm()
 {
-  for (size_t i; i < g_manager->gates_count; i++)
+  is_closing=1;
+
+  for (size_t i = 0; i < g_manager->gates_count; i++)
   {
     printf(GRAY"[PARENT/PID=%d] Waiting for %d childs to exit" WHITE "\n",
          getpid(), g_manager->gates_count -i); 
 
-    kill(SIGTERM, g_manager->gates[i]->p_id);
-    free((void *)&(g_manager->gates[i]));
+    kill(g_manager->gates[i]->p_id, SIGTERM);
+    
+    int status;
+    pid_t pid = waitpid(g_manager->gates[i]->p_id, &status, 0);
+
+    if (pid == -1)
+    {
+      perror("Sigterm on child wait went wrong.");
+      exit(EXIT_FAILURE);
+    }
+
+    printf(MAGENTA GT_MESSAGE_TERMINATED WHITE "\n", getpid(), pid, status);
+
+    free(g_manager->gates[i]);
   }
 
-  free((void *)g_manager);
+  free(g_manager->gates);
+  free(g_manager);
+
+  printf(MAGENTA GT_MESSAGE_TERMINATED_PARENT WHITE "\n", getpid());
+  exit(EXIT_SUCCESS);
 }
 
 void on_sigchld()
 {
-  for (size_t i = 0; i <g_manager->gates_count; i++) 
-  {
-    int status;
-    pid_t pid = waitpid(g_manager->gates[i]->p_id, &status, WNOHANG);
-    if (pid == -1) {
-      perror("waitpid failed");
-    }
-    else if (pid>0) {
-   int status;
-   pid_t pid = wait(&status);
-   // describe_wait_status(pid, status);
-    }
+  if (is_closing) return;
+
+  int status;
+  pid_t pid = wait(&status);
+
+  if (pid==-1) {
+    perror("wait for child");
+    exit(EXIT_FAILURE);
+  }
+  else {
+          for (size_t i = 0; i <g_manager->gates_count; i++) 
+          {
+            if (g_manager->gates[i]->p_id == pid) 
+            {
+
+            if (WIFSTOPPED(status)) 
+            {
+                printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d stopped. Continuing it." WHITE "\n", 
+                    getpid(), g_manager->gates[i]->i, pid);
+                kill(pid, SIGCONT);
+            } 
+            else if (WIFEXITED(status)) 
+            {
+                printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d exited with status code %d." WHITE "\n", 
+                    getpid(), g_manager->gates[i]->i, pid, WEXITSTATUS(status));
+
+                    create_child(g_manager->gates[i]);
+            } 
+            else if (WIFSIGNALED(status)) 
+            {
+                printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d terminated by signal %d with status code %d." WHITE "\n", 
+                    getpid(), g_manager->gates[i]->i, pid, WSTOPSIG(status), WEXITSTATUS(status));
+
+                      create_child(g_manager->gates[i]);
+            }
+
+            return;
+          }
+       }
+
+        perror("uknown pid");
+        exit(EXIT_FAILURE);
   }
 }
 
 void dispatch_signal(int signal) {
+
+  printf(YELLOW "[PARENT] Got signal %d" WHITE "\n", signal);
 
   switch (signal) {
     case SIGUSR1:
@@ -74,56 +153,15 @@ void now_we_wait()
   while (1);
 }
 
-void create_child(struct gate_process *gate)
-{
-  printf("Forking");
-  pid_t p = fork();
-  check_neg(p, "Failed to fork");
-
-  printf("Pid after fork: %d", p);
-
-  if (p == 0)
-  {
-    int i_len = snprintf(NULL, 0, "%d", gate->i);
-    printf("I_len: %d", i_len);
-
-    char *i_str = malloc(i_len + 1);
-    printf("I_str: %d", i_str);
-    snprintf(i_str, i_len + 1, "%s", gate->i);
-
-    char executable[8] = "./child";
-    char gate_value[2] = { gate->initial_state, '\0'};
-    printf("Executable %s", executable);
-    printf("gate_value %s", gate_value);
-
-    char *const argv[] = {executable, i_str, gate_value, NULL};
-    int status = execv(executable, argv);
-
-    /* on success, execution will never reach this line */
-    check_neg(status, "Failed to create child");
-  }
-
-  printf("[PARENT]: Gate info: i: %d, state: %c\n", gate->i, gate->initial_state);
-
-  printf(MAGENTA "[PARENT/PID=%d] Created child %d (PID=%d) and initial state '%c'" WHITE "\n",
-         getpid(), gate->i, p, gate->initial_state);
-
-  gate->p_id = p;
-}
-
 int main(int argc, char **argv)
 {
-  printf("SKATA");
   if (argc<2) {
     perror("Not enough arguments for parent process");
     exit(EXIT_FAILURE);
   }
   
-  printf("Allocating");
   g_manager = gm_alloc();
-  printf("Initializing");
   gm_init_manager(g_manager);
-  printf("Parsing gates");
   gm_parse_gates_from_str(g_manager, argv[1]);
 
   for (size_t i = 0; i < g_manager->gates_count; i++)
@@ -134,3 +172,4 @@ int main(int argc, char **argv)
   now_we_wait();
   return 0;
 }
+

@@ -22,11 +22,14 @@
 #define GT_STATE_CLOSED 'f'
 #define GT_STATE_OPEN 't'
 
-#define GT_MESSAGE_OPEN "[ID=%d/PID=%d/TIME=%ld s] The gates are open!"
-#define GT_MESSAGE_CLOSED "[ID=%d/PID=%d/TIME=%ld s] The gates are closed!"
+#define GT_MESSAGE_OPEN "[ID=%d/PID=%d/TIME=%lds] The gates are open!"
+#define GT_MESSAGE_CLOSED "[ID=%d/PID=%d/TIME=%lds] The gates are closed!"
+
+#define GT_MESSAGE_TERMINATED "[PARENT/PID=%d] Child with PID=%d terminated successfully with exit status code %d!"
+#define GT_MESSAGE_TERMINATED_PARENT "[PARENT/PID=%d] All children exited, terminating as well"
 
 #define WAIT_TIME 2
-#define ALARM_TIME 15
+#define ALARM_TIME 500
 
 struct gate_process
 {
@@ -102,7 +105,7 @@ void gm_parse_gates_from_str(struct gate_manager *manager, const char *gates_str
   size_t length = strlen(gates_string);
   manager->gates = (struct gate_process **)malloc(sizeof(struct gate_process*) * length);
   manager->gates_count = length;
-  for (size_t i; i < length; i++)
+  for (size_t i = 0; i < length; i++)
   {
       manager->gates[i] = (struct gate_process*)malloc(sizeof(struct gate_process));
       gm_init_gate(manager->gates[i], i, -1, gates_string[i]);

@@ -1,5 +1,5 @@
 TARGETS = child parent
-flags= -Wall
+flags= -Wall -Wextra -Wpedantic -g -O1
 
 # Targets to build when running `make`
 all: $(TARGETS)
