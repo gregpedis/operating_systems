@@ -107,8 +107,7 @@ int main(int argc, char **argv)
   sigaction(SIGALRM, &action, NULL);
 
   on_sigalrm();
-  while (1)
-    ;
+  while (1);
 
-  return 0;
+  return EXIT_SUCCESS;
 }
