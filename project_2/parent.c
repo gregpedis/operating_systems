@@ -21,7 +21,7 @@ void create_child(struct gate_process *gate)
     snprintf(i_str, i_len + 1, "%d", gate->i);
 
     char executable[8] = "./child";
-    char gate_value[2] = { gate->initial_state, '\0'};
+    char gate_value[2] = {gate->initial_state, '\0'};
 
     char *const argv[] = {executable, i_str, gate_value, NULL};
     int status = execv(executable, argv);
@@ -46,15 +46,15 @@ void on_sigusr1()
 
 void on_sigterm()
 {
-  is_closing=1;
+  is_closing = 1;
 
   for (size_t i = 0; i < g_manager->gates_count; i++)
   {
-    printf(GRAY"[PARENT/PID=%d] Waiting for %d childs to exit" WHITE "\n",
-         getpid(), g_manager->gates_count -i); 
+    printf(GRAY "[PARENT/PID=%d] Waiting for %d childs to exit" WHITE "\n",
+           getpid(), g_manager->gates_count - i);
 
     kill(g_manager->gates[i]->p_id, SIGTERM);
-    
+
     int status;
     pid_t pid = waitpid(g_manager->gates[i]->p_id, &status, 0);
 
@@ -78,67 +78,71 @@ void on_sigterm()
 
 void on_sigchld()
 {
-  if (is_closing) return;
+  if (is_closing)
+    return;
 
   int status;
   pid_t pid = wait(&status);
 
-  if (pid==-1) {
+  if (pid == -1)
+  {
     perror("wait for child");
     exit(EXIT_FAILURE);
   }
-  else {
-          for (size_t i = 0; i <g_manager->gates_count; i++) 
-          {
-            if (g_manager->gates[i]->p_id == pid) 
-            {
+  else
+  {
+    for (size_t i = 0; i < g_manager->gates_count; i++)
+    {
+      if (g_manager->gates[i]->p_id == pid)
+      {
+        if (WIFSTOPPED(status))
+        {
+          printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d stopped. Continuing it." WHITE "\n",
+                 getpid(), g_manager->gates[i]->i, pid);
+          kill(pid, SIGCONT);
+        }
+        else if (WIFEXITED(status))
+        {
+          printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d exited with status code %d." WHITE "\n",
+                 getpid(), g_manager->gates[i]->i, pid, WEXITSTATUS(status));
 
-            if (WIFSTOPPED(status)) 
-            {
-                printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d stopped. Continuing it." WHITE "\n", 
-                    getpid(), g_manager->gates[i]->i, pid);
-                kill(pid, SIGCONT);
-            } 
-            else if (WIFEXITED(status)) 
-            {
-                printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d exited with status code %d." WHITE "\n", 
-                    getpid(), g_manager->gates[i]->i, pid, WEXITSTATUS(status));
+          create_child(g_manager->gates[i]);
+        }
+        else if (WIFSIGNALED(status))
+        {
+          printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d terminated by signal %d with status code %d." WHITE "\n",
+                 getpid(), g_manager->gates[i]->i, pid, WSTOPSIG(status), WEXITSTATUS(status));
 
-                    create_child(g_manager->gates[i]);
-            } 
-            else if (WIFSIGNALED(status)) 
-            {
-                printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d terminated by signal %d with status code %d." WHITE "\n", 
-                    getpid(), g_manager->gates[i]->i, pid, WSTOPSIG(status), WEXITSTATUS(status));
+          create_child(g_manager->gates[i]);
+        }
 
-                      create_child(g_manager->gates[i]);
-            }
+        return;
+      }
+    }
 
-            return;
-          }
-       }
-
-        perror("uknown pid");
-        exit(EXIT_FAILURE);
+    perror("uknown pid");
+    exit(EXIT_FAILURE);
   }
 }
 
-void dispatch_signal(int signal) {
+void dispatch_signal(int signal)
+{
 
   printf(YELLOW "[PARENT] Got signal %d" WHITE "\n", signal);
 
-  switch (signal) {
-    case SIGUSR1:
-      on_sigusr1();
-      break;
-    case SIGTERM:
-      on_sigterm();
-      break;
-    case SIGCHLD:
-      on_sigchld();
-      break;
-    default:
-      break;
+  switch (signal)
+  {
+  case SIGUSR1:
+    on_sigusr1();
+    break;
+  case SIGTERM:
+    on_sigterm();
+    break;
+  case SIGCHLD:
+    on_sigchld();
+    break;
+  default:
+    break;
   }
 }
 
@@ -150,26 +154,27 @@ void now_we_wait()
   sigaction(SIGTERM, &action, NULL);
   sigaction(SIGCHLD, &action, NULL);
 
-  while (1);
+  while (1)
+    ;
 }
 
 int main(int argc, char **argv)
 {
-  if (argc<2) {
+  if (argc < 2)
+  {
     perror("Not enough arguments for parent process");
     exit(EXIT_FAILURE);
   }
-  
+
   g_manager = gm_alloc();
   gm_init_manager(g_manager);
   gm_parse_gates_from_str(g_manager, argv[1]);
 
   for (size_t i = 0; i < g_manager->gates_count; i++)
   {
-      create_child(g_manager->gates[i]);
+    create_child(g_manager->gates[i]);
   }
 
   now_we_wait();
   return 0;
 }
-

@@ -103,14 +103,13 @@ void gm_init_gate(struct gate_process *gate, int id, pid_t process, char state)
 void gm_parse_gates_from_str(struct gate_manager *manager, const char *gates_string)
 {
   size_t length = strlen(gates_string);
-  manager->gates = (struct gate_process **)malloc(sizeof(struct gate_process*) * length);
+  manager->gates = (struct gate_process **)malloc(sizeof(struct gate_process *) * length);
   manager->gates_count = length;
   for (size_t i = 0; i < length; i++)
   {
-      manager->gates[i] = (struct gate_process*)malloc(sizeof(struct gate_process));
-      gm_init_gate(manager->gates[i], i, -1, gates_string[i]);
+    manager->gates[i] = (struct gate_process *)malloc(sizeof(struct gate_process));
+    gm_init_gate(manager->gates[i], i, -1, gates_string[i]);
   }
 }
 
 #endif
-

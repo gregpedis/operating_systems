@@ -26,57 +26,61 @@ void print_identity_message()
 
 void on_sigusr1()
 {
-    print_identity_message();
+  print_identity_message();
 }
 
 void on_sigusr2()
 {
-  if (g_context->state == GT_STATE_CLOSED )
+  if (g_context->state == GT_STATE_CLOSED)
   {
-    g_context->state =GT_STATE_OPEN;
+    g_context->state = GT_STATE_OPEN;
     print_identity_message();
   }
-  else if (g_context->state ==GT_STATE_OPEN)
+  else if (g_context->state == GT_STATE_OPEN)
   {
     g_context->state = GT_STATE_CLOSED;
     print_identity_message();
   }
-  else {
+  else
+  {
     perror("Uknown current state");
-   exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
   }
 }
 
-void on_sigterm(){
-  free((void *) g_context); 
+void on_sigterm()
+{
+  free((void *)g_context);
   exit(EXIT_SUCCESS);
 }
 
 void on_sigalrm()
 {
-    print_identity_message();
-    alarm(ALARM_TIME);
+  print_identity_message();
+  alarm(ALARM_TIME);
 }
 
-void handle_signal(int signal) {
+void handle_signal(int signal)
+{
 
   printf(YELLOW "[CHILD ID=%d/PID=%d/TIME=%lds] Got Signal: %d" WHITE "\n", g_context->i, getpid(), get_time_elapsed(g_context->timestamp), signal);
 
-  switch (signal) {
-    case SIGUSR1:
-      on_sigusr1();
-      break;
-    case SIGUSR2:
-      on_sigusr2();
-      break;
-    case SIGTERM:
-      on_sigterm();
-      break;
-    case SIGALRM:
-      on_sigalrm();
-      break;
-    default:
-      break;
+  switch (signal)
+  {
+  case SIGUSR1:
+    on_sigusr1();
+    break;
+  case SIGUSR2:
+    on_sigusr2();
+    break;
+  case SIGTERM:
+    on_sigterm();
+    break;
+  case SIGALRM:
+    on_sigalrm();
+    break;
+  default:
+    break;
   }
 }
 
@@ -104,8 +108,8 @@ int main(int argc, char **argv)
   sigaction(SIGALRM, &action, NULL);
 
   on_sigalrm();
-  while (1);
+  while (1)
+    ;
 
   return 0;
 }
-
