@@ -7,15 +7,17 @@
 
 struct gate_context *g_context;
 
-void print_identity_message(*g_context)
+void print_identity_message()
 {
+    printf("[CHILD] CONTEXT: I-> %d State-> %c \n", g_context->i, g_context->state);
+
   if (g_context->state == GT_STATE_CLOSED)
   {
-    printf(RED GT_MESSAGE_CLOSED WHITE "\n", g_context->i, getpid());
+    printf(RED GT_MESSAGE_CLOSED WHITE "\n", g_context->i, getpid(), get_time_elapsed(g_context->timestamp));
   }
   else if (g_context->state == GT_STATE_OPEN)
   {
-    printf(GREEN GT_MESSAGE_OPEN WHITE "\n", g_context->I, getpid());
+    printf(GREEN GT_MESSAGE_OPEN WHITE "\n", g_context->i, getpid(), get_time_elapsed(g_context->timestamp));
   }
   else
   {
@@ -24,14 +26,69 @@ void print_identity_message(*g_context)
   }
 }
 
+void on_sigusr1()
+{
+    print_identity_message();
+}
+
+void on_sigusr2()
+{
+  if (g_context->state == GT_STATE_CLOSED )
+  {
+    g_context->state =GT_STATE_OPEN;
+    print_identity_message();
+  }
+  else if (g_context->state ==GT_STATE_OPEN)
+  {
+    g_context->state = GT_STATE_CLOSED;
+    print_identity_message();
+  }
+  else {
+    perror("Uknown current state");
+   exit(EXIT_FAILURE);
+  }
+}
+
+void on_sigterm(){
+  free((void *) g_context); 
+  exit(EXIT_SUCCESS);
+}
+
+void on_sigalrm()
+{
+    print_identity_message();
+    alarm(ALARM_TIME);
+}
+
+void handle_signal(int signal) {
+
+  switch (signal) {
+    case SIGUSR1:
+      on_sigusr1();
+      break;
+    case SIGUSR2:
+      on_sigusr2();
+      break;
+    case SIGTERM:
+      on_sigterm();
+      break;
+    case SIGALRM:
+      on_sigalrm();
+      break;
+    default:
+      break;
+  }
+}
+
 int main(int argc, char **argv)
 {
   if (argc < 3)
   {
     perror("Not enough arguments for child process.");
-    exit(EXIT_FAILURE)
+    exit(EXIT_FAILURE);
   }
 
+  printf("[CHILD] ARGUMENTS: Arg0-> %s  Arg1-> %s Arg2-> %s \n", argv[0], argv[1], argv[2]);
   char s = argv[2][0];
   int i;
   sscanf(argv[1], "%d", &i);
@@ -40,7 +97,15 @@ int main(int argc, char **argv)
   gc_init_context(g_context);
   gc_parse_gate_from_args(g_context, i, s);
 
-  print_identity_message(*g_context);
+  struct sigaction action;
+  action.sa_handler = handle_signal;
+  sigaction(SIGUSR1, &action, NULL);
+  sigaction(SIGUSR2, &action, NULL);
+  sigaction(SIGTERM, &action, NULL);
+  sigaction(SIGALRM, &action, NULL);
+
+  on_sigalrm();
 
   return 0;
 }
+

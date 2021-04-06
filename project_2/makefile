@@ -1,22 +1,24 @@
 TARGETS = child parent
+flags= -Wall
 
 # Targets to build when running `make`
 all: $(TARGETS)
+
 
 # Phony targets. Executed always.
 .PHONY: all clean
 
 # Targets to build `child` binary
 child: child.o
-	gcc child.o -o child
+	gcc child.o $(flags) -o child
 child.o: child.c
-	gcc child.c -c -o child.o
+	gcc child.c -c $(flags) -o child.o
 
 # Targets to build `parent` binary
 parent: parent.o
-	gcc parent.o -o parent
+	gcc parent.o $(flags) -o parent
 parent.o: parent.c
-	gcc parent.c -c -o parent.o
+	gcc parent.c $(flags) -c -o parent.o
 
 # Targets to build in one-step
 child-onestep: child.c
