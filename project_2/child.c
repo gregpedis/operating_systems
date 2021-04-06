@@ -1,8 +1,3 @@
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <sys/wait.h>
-// #include <unistd.h>
-
 #include "gatesapi.h"
 
 struct gate_context *g_context;
@@ -107,7 +102,8 @@ int main(int argc, char **argv)
   sigaction(SIGALRM, &action, NULL);
 
   on_sigalrm();
-  while (1);
+  while (1)
+    ;
 
   return EXIT_SUCCESS;
 }

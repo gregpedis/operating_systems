@@ -1,8 +1,3 @@
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <sys/wait.h>
-// #include <unistd.h>
-
 #include "gatesapi.h"
 
 struct gate_manager *g_manager;
@@ -78,43 +73,47 @@ void on_sigterm()
 
 void on_sigchld()
 {
-  if (is_closing) { return; }
+  if (is_closing)
+  {
+    return;
+  }
 
-    for (size_t i = 0; i < g_manager->gates_count; i++)
+  for (size_t i = 0; i < g_manager->gates_count; i++)
+  {
+    int status;
+    pid_t pid = waitpid(g_manager->gates[i]->p_id, &status, WNOHANG | WUNTRACED);
+
+    if (pid == -1)
     {
-      int status;
-      pid_t pid = waitpid(g_manager->gates[i]->p_id, &status, WNOHANG | WUNTRACED);
+      perror("wait for child");
+      exit(EXIT_FAILURE);
+    }
+    else if (pid != 0)
+    {
 
-      if (pid == -1) 
+      if (WIFSTOPPED(status))
       {
-        perror("wait for child");
-        exit(EXIT_FAILURE);
+        printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d stopped. Continuing it." WHITE "\n",
+               getpid(), g_manager->gates[i]->i, pid);
+
+        kill(pid, SIGCONT);
       }
-      else if (pid!=0) {
+      else if (WIFEXITED(status))
+      {
+        printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d exited with status code %d." WHITE "\n",
+               getpid(), g_manager->gates[i]->i, pid, WEXITSTATUS(status));
 
-        if (WIFSTOPPED(status))
-        {
-          printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d stopped. Continuing it." WHITE "\n",
-                 getpid(), g_manager->gates[i]->i, pid);
-
-          kill(pid, SIGCONT);
-        }
-        else if (WIFEXITED(status))
-        {
-          printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d exited with status code %d." WHITE "\n",
-                 getpid(), g_manager->gates[i]->i, pid, WEXITSTATUS(status));
-
-          create_child(g_manager->gates[i]);
-        }
-        else if (WIFSIGNALED(status))
-        {
-          printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d terminated by signal %d with status code %d." WHITE "\n",
-                 getpid(), g_manager->gates[i]->i, pid, WSTOPSIG(status), WEXITSTATUS(status));
-
-          create_child(g_manager->gates[i]);
-        }
+        create_child(g_manager->gates[i]);
       }
+      else if (WIFSIGNALED(status))
+      {
+        printf(MAGENTA "[PARENT/PID=%d] Child %d with PID=%d terminated by signal %d with status code %d." WHITE "\n",
+               getpid(), g_manager->gates[i]->i, pid, WSTOPSIG(status), WEXITSTATUS(status));
+
+        create_child(g_manager->gates[i]);
       }
+    }
+  }
 }
 
 void dispatch_signal(int signal)
