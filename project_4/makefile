@@ -2,7 +2,7 @@ TARGETS = ask4
 flags= -Wall -Wextra -Wpedantic -g -O1
 
 # Phony targets. 
-.PHONY: all clean
+.PHONY: all clean remake
 
 # Targets to build when running `make`
 all: $(TARGETS)
@@ -11,7 +11,11 @@ all: $(TARGETS)
 clean:
 	rm -rf $(TARGETS) *.o
 
-# Targets to build `factorial_pipes` binary
+# Run `make remake to combine clean and all phony targets.
+remake:
+	make clean && make all
+
+# Targets to build `ask4` binary
 ask4: ask4.o
 	gcc ask4.o -o ask4
 ask4.o: ask4.c
