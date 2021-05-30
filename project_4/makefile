@@ -11,7 +11,7 @@ all: $(TARGETS)
 clean:
 	rm -rf $(TARGETS) *.o
 
-# Run `make remake to combine clean and all phony targets.
+# Run `make remake` to combine `clean` and `all` phony targets.
 remake:
 	make clean && make all
 
