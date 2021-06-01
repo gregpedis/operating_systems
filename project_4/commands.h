@@ -16,8 +16,8 @@ void initiate_command_loop(int sock_fd, int is_debug);
 
 void execute_command_get(int sock_fd, int is_debug);
 void execute_command_default(int sock_fd, int is_debug, char *user_input, int n_write);
+void execute_command_exit(int sock_fd);
 void execute_command_help();
-void execute_command_exit();
 
 void execute_command_loop(int sock_fd, int is_debug)
 {
@@ -51,7 +51,7 @@ void execute_command_loop(int sock_fd, int is_debug)
         }
         else if (strcmp(buffer, CMD_EXIT) == 0)
         {
-            execute_command_exit();
+            execute_command_exit(sock_fd);
         }
         else
         {
@@ -74,9 +74,11 @@ void execute_command_help()
     printf(CLR_GRAY ">> N name surname reason: asks for covid request\n\n" CLR_DEFAULT);
 }
 
-void execute_command_exit()
+void execute_command_exit(int sock_fd)
 {
     printf(CLR_RED "Goodbye.\n" CLR_DEFAULT);
+    shutdown(sock_fd, 2);
+    close(sock_fd);
     exit(EXIT_SUCCESS);
 }
 

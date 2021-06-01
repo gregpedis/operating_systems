@@ -13,6 +13,5 @@ int main(int argc, char *const *argv)
     connect_to_server(sock_fd, config);
     // command operations.
     execute_command_loop(sock_fd, config->is_debug);
-
     return 0;
 }
